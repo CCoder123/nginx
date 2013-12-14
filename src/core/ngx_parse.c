@@ -1,16 +1,12 @@
-
 /*
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
  */
 
-
 #include <ngx_config.h>
 #include <ngx_core.h>
 
-
-ssize_t
-ngx_parse_size(ngx_str_t *line)
+ssize_t ngx_parse_size(ngx_str_t *line)
 {
     u_char     unit;
     size_t     len;
@@ -48,8 +44,7 @@ ngx_parse_size(ngx_str_t *line)
 }
 
 
-off_t
-ngx_parse_offset(ngx_str_t *line)
+off_t ngx_parse_offset(ngx_str_t *line)
 {
     u_char     unit;
     off_t      offset;
@@ -93,8 +88,7 @@ ngx_parse_offset(ngx_str_t *line)
 }
 
 
-ngx_int_t
-ngx_parse_time(ngx_str_t *line, ngx_uint_t is_sec)
+ngx_int_t ngx_parse_time(ngx_str_t *line, ngx_uint_t is_sec)
 {
     u_char      *p, *last;
     ngx_int_t    value, total, scale;

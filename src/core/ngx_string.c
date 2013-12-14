@@ -917,16 +917,15 @@ ngx_atofp(u_char *line, size_t n, size_t point)
 }
 
 
-ssize_t
-ngx_atosz(u_char *line, size_t n)
+ssize_t ngx_atosz(u_char *line, size_t n)
 {
     ssize_t  value;
-
     if (n == 0) {
         return NGX_ERROR;
     }
 
-    for (value = 0; n--; line++) {
+    for (value = 0; n--; line++) 
+	{
         if (*line < '0' || *line > '9') {
             return NGX_ERROR;
         }
@@ -943,16 +942,15 @@ ngx_atosz(u_char *line, size_t n)
 }
 
 
-off_t
-ngx_atoof(u_char *line, size_t n)
+off_t ngx_atoof(u_char *line, size_t n)
 {
     off_t  value;
-
     if (n == 0) {
         return NGX_ERROR;
     }
 
-    for (value = 0; n--; line++) {
+    for (value = 0; n--; line++)
+	{
         if (*line < '0' || *line > '9') {
             return NGX_ERROR;
         }
