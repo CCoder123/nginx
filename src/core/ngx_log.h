@@ -1,17 +1,13 @@
-
 /*
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
  */
 
-
 #ifndef _NGX_LOG_H_INCLUDED_
 #define _NGX_LOG_H_INCLUDED_
 
-
 #include <ngx_config.h>
 #include <ngx_core.h>
-
 
 #define NGX_LOG_STDERR            0
 #define NGX_LOG_EMERG             1
