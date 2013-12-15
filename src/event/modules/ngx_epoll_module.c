@@ -123,7 +123,6 @@ static ngx_connection_t     ngx_eventfd_conn;
 #endif
 
 static ngx_str_t      epoll_name = ngx_string("epoll");
-
 static ngx_command_t  ngx_epoll_commands[] = {
 
     { ngx_string("epoll_events"),
@@ -232,7 +231,6 @@ ngx_epoll_aio_init(ngx_cycle_t *cycle, ngx_epoll_conf_t *epcf)
                    "eventfd: %d", ngx_eventfd);
 
     n = 1;
-
     if (ioctl(ngx_eventfd, FIONBIO, &n) == -1) {
         ngx_log_error(NGX_LOG_EMERG, cycle->log, ngx_errno,
                       "ioctl(eventfd, FIONBIO) failed");
@@ -283,8 +281,7 @@ failed:
 #endif
 
 //主要是完成epoll的相关初始化工作
-static ngx_int_t
-ngx_epoll_init(ngx_cycle_t *cycle, ngx_msec_t timer)
+static ngx_int_t ngx_epoll_init(ngx_cycle_t *cycle, ngx_msec_t timer)
 {
     ngx_epoll_conf_t  *epcf;
     //取得epoll模块的配置结构
@@ -303,9 +300,7 @@ ngx_epoll_init(ngx_cycle_t *cycle, ngx_msec_t timer)
         }
 
 #if (NGX_HAVE_FILE_AIO)
-
         ngx_epoll_aio_init(cycle, epcf);
-
 #endif
     }
 
@@ -322,9 +317,7 @@ ngx_epoll_init(ngx_cycle_t *cycle, ngx_msec_t timer)
     }
 
     nevents = epcf->events;
-
     ngx_io = ngx_os_io;
-
     ngx_event_actions = ngx_epoll_module_ctx.actions;
 
 #if (NGX_HAVE_CLEAR_EVENT)
@@ -555,8 +548,7 @@ ngx_epoll_del_connection(ngx_connection_t *c, ngx_uint_t flags)
 }
 
 
-static ngx_int_t
-ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
+static ngx_int_t ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
 {
     int                events;
     uint32_t           revents;
@@ -567,28 +559,25 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
     ngx_connection_t  *c;
 
     /* NGX_TIMER_INFINITE == INFTIM */
-
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                    "epoll timer: %M", timer);
-    //一开始就是等待事件，最长等待时间为timer；nginx为事件专门用红黑树维护了一个计时器
+    
+	//一开始就是等待事件，最长等待时间为timer；nginx为事件专门用红黑树维护了一个计时器
     events = epoll_wait(ep, event_list, (int) nevents, timer);
-
     err = (events == -1) ? ngx_errno : 0;
-
     if (flags & NGX_UPDATE_TIME || ngx_event_timer_alarm) {
         ngx_time_update(); //执行一次事件更新，nginx将时间缓存到一组全局变量中，方便程序高效的获取事件
     }
+
     //处理wait错误
     if (err) {
         if (err == NGX_EINTR) {
-
             if (ngx_event_timer_alarm) {
                 ngx_event_timer_alarm = 0;
                 return NGX_OK;
             }
 
             level = NGX_LOG_INFO;
-
         } else {
             level = NGX_LOG_ALERT;
         }
@@ -596,6 +585,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
         ngx_log_error(level, cycle->log, err, "epoll_wait() failed");
         return NGX_ERROR;
     }
+
     //wait返回事件数0，可能是timeout返回，也可能是非timeout返回，非timeout返回则是error
     if (events == 0) {
         if (timer != NGX_TIMER_INFINITE) {
@@ -609,32 +599,29 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
 
     ngx_mutex_lock(ngx_posted_events_mutex);
     //循环开始处理收到的所有事件
-    for (i = 0; i < events; i++) {
+    for (i = 0; i < events; i++) 
+	{
         c = event_list[i].data.ptr;
-
         instance = (uintptr_t) c & 1;
         c = (ngx_connection_t *) ((uintptr_t) c & (uintptr_t) ~1);
-
         rev = c->read;
-
         if (c->fd == -1 || rev->instance != instance) {
-
             /*
              * the stale event from a file descriptor
              * that was just closed in this iteration
              */
-
             ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                            "epoll: stale event %p", c);
             continue;
         }
-        //取得发生一个事件
+        
+		//取得发生一个事件
         revents = event_list[i].events;
-
         ngx_log_debug3(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                        "epoll: fd:%d ev:%04XD d:%p",
                        c->fd, revents, event_list[i].data.ptr);
-        //记录wait的错误返回状态
+        
+		//记录wait的错误返回状态
         if (revents & (EPOLLERR|EPOLLHUP)) {
             ngx_log_debug2(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                            "epoll_wait() error on fd:%d ev:%04XD",
@@ -657,41 +644,32 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
              * then add these flags to handle the events at least in one
              * active handler
              */
-
             revents |= EPOLLIN|EPOLLOUT;
         }
 
         if ((revents & EPOLLIN) && rev->active) {
-
             if ((flags & NGX_POST_THREAD_EVENTS) && !rev->accept) {
                 rev->posted_ready = 1;
-
             } else {
                 rev->ready = 1;
             }
-            //事件放入到相应的队列中
+            
+			//事件放入到相应的队列中
             if (flags & NGX_POST_EVENTS) {
-                queue = (ngx_event_t **) (rev->accept ?
-                               &ngx_posted_accept_events : &ngx_posted_events);
-
+                queue = (ngx_event_t **) (rev->accept ? &ngx_posted_accept_events : &ngx_posted_events);
                 ngx_locked_post_event(rev, queue);
-
             } else {
                 rev->handler(rev);
             }
         }
 
         wev = c->write;
-
         if ((revents & EPOLLOUT) && wev->active) {
-
             if (c->fd == -1 || wev->instance != instance) {
-
                 /*
                  * the stale event from a file descriptor
                  * that was just closed in this iteration
                  */
-
                 ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                                "epoll: stale event %p", c);
                 continue;
@@ -699,14 +677,12 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
 
             if (flags & NGX_POST_THREAD_EVENTS) {
                 wev->posted_ready = 1;
-
             } else {
                 wev->ready = 1;
             }
 
             if (flags & NGX_POST_EVENTS) {
                 ngx_locked_post_event(wev, &ngx_posted_events);
-
             } else {
                 wev->handler(wev);
             }
@@ -721,8 +697,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
 
 #if (NGX_HAVE_FILE_AIO)
 
-static void
-ngx_epoll_eventfd_handler(ngx_event_t *ev)
+static void ngx_epoll_eventfd_handler(ngx_event_t *ev)
 {
     int               n, events;
     long              i;
@@ -736,9 +711,7 @@ ngx_epoll_eventfd_handler(ngx_event_t *ev)
     ngx_log_debug0(NGX_LOG_DEBUG_EVENT, ev->log, 0, "eventfd handler");
 
     n = read(ngx_eventfd, &ready, 8);
-
     err = ngx_errno;
-
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, ev->log, 0, "eventfd: %d", n);
 
     if (n != 8) {
@@ -760,17 +733,14 @@ ngx_epoll_eventfd_handler(ngx_event_t *ev)
     ts.tv_nsec = 0;
 
     while (ready) {
-
         events = io_getevents(ngx_aio_ctx, 1, 64, event, &ts);
-
         ngx_log_debug1(NGX_LOG_DEBUG_EVENT, ev->log, 0,
                        "io_getevents: %l", events);
 
         if (events > 0) {
             ready -= events;
-
-            for (i = 0; i < events; i++) {
-
+            for (i = 0; i < events; i++)
+			{
                 ngx_log_debug4(NGX_LOG_DEBUG_EVENT, ev->log, 0,
                                "io_event: %uXL %uXL %L %L",
                                 event[i].data, event[i].obj,
@@ -805,8 +775,7 @@ ngx_epoll_eventfd_handler(ngx_event_t *ev)
 #endif
 
 
-static void *
-ngx_epoll_create_conf(ngx_cycle_t *cycle)
+static void* ngx_epoll_create_conf(ngx_cycle_t *cycle)
 {
     ngx_epoll_conf_t  *epcf;
 
@@ -822,8 +791,7 @@ ngx_epoll_create_conf(ngx_cycle_t *cycle)
 }
 
 
-static char *
-ngx_epoll_init_conf(ngx_cycle_t *cycle, void *conf)
+static char* ngx_epoll_init_conf(ngx_cycle_t *cycle, void *conf)
 {
     ngx_epoll_conf_t *epcf = conf;
 

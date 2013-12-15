@@ -1,17 +1,13 @@
-
 /*
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
  */
 
-
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_channel.h>
 
-
-ngx_int_t
-ngx_write_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size,
+ngx_int_t ngx_write_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size,
     ngx_log_t *log)
 {
     ssize_t             n;
@@ -20,7 +16,6 @@ ngx_write_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size,
     struct msghdr       msg;
 
 #if (NGX_HAVE_MSGHDR_MSG_CONTROL)
-
     union {
         struct cmsghdr  cm;
         char            space[CMSG_SPACE(sizeof(int))];
@@ -58,7 +53,6 @@ ngx_write_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size,
     if (ch->fd == -1) {
         msg.msg_accrights = NULL;
         msg.msg_accrightslen = 0;
-
     } else {
         msg.msg_accrights = (caddr_t) &ch->fd;
         msg.msg_accrightslen = sizeof(int);
@@ -75,7 +69,6 @@ ngx_write_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size,
     msg.msg_iovlen = 1;
 
     n = sendmsg(s, &msg, 0);
-
     if (n == -1) {
         err = ngx_errno;
         if (err == NGX_EAGAIN) {
@@ -90,8 +83,7 @@ ngx_write_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size,
 }
 
 // 读出master发过来的指令数据，是使用recvmsg实现的，详情介绍见《unix网络编程》
-ngx_int_t
-ngx_read_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size, ngx_log_t *log)
+ngx_int_t ngx_read_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size, ngx_log_t *log)
 {
     ssize_t             n;
     ngx_err_t           err;
@@ -124,7 +116,6 @@ ngx_read_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size, ngx_log_t *log)
 #endif
 
     n = recvmsg(s, &msg, 0);
-
     if (n == -1) {
         err = ngx_errno;
         if (err == NGX_EAGAIN) {
@@ -147,9 +138,7 @@ ngx_read_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size, ngx_log_t *log)
     }
 
 #if (NGX_HAVE_MSGHDR_MSG_CONTROL)
-
     if (ch->command == NGX_CMD_OPEN_CHANNEL) {
-
         if (cmsg.cm.cmsg_len < (socklen_t) CMSG_LEN(sizeof(int))) {
             ngx_log_error(NGX_LOG_ALERT, log, 0,
                           "recvmsg() returned too small ancillary data");
@@ -174,9 +163,7 @@ ngx_read_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size, ngx_log_t *log)
         ngx_log_error(NGX_LOG_ALERT, log, 0,
                       "recvmsg() truncated data");
     }
-
 #else
-
     if (ch->command == NGX_CMD_OPEN_CHANNEL) {
         if (msg.msg_accrightslen != sizeof(int)) {
             ngx_log_error(NGX_LOG_ALERT, log, 0,
@@ -186,28 +173,24 @@ ngx_read_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size, ngx_log_t *log)
 
         ch->fd = fd;
     }
-
 #endif
 
     return n;
 }
 
 
-ngx_int_t
-ngx_add_channel_event(ngx_cycle_t *cycle, ngx_fd_t fd, ngx_int_t event,
+ngx_int_t ngx_add_channel_event(ngx_cycle_t *cycle, ngx_fd_t fd, ngx_int_t event,
     ngx_event_handler_pt handler)
 {
     ngx_event_t       *ev, *rev, *wev;
     ngx_connection_t  *c;
 
     c = ngx_get_connection(fd, cycle->log);
-
     if (c == NULL) {
         return NGX_ERROR;
     }
 
     c->pool = cycle->pool;
-
     rev = c->read;
     wev = c->write;
 
@@ -223,9 +206,7 @@ ngx_add_channel_event(ngx_cycle_t *cycle, ngx_fd_t fd, ngx_int_t event,
 
     rev->channel = 1;
     wev->channel = 1;
-
     ev = (event == NGX_READ_EVENT) ? rev : wev;
-
     ev->handler = handler;
 
     if (ngx_add_conn && (ngx_event_flags & NGX_USE_EPOLL_EVENT) == 0) {
@@ -245,8 +226,7 @@ ngx_add_channel_event(ngx_cycle_t *cycle, ngx_fd_t fd, ngx_int_t event,
 }
 
 
-void
-ngx_close_channel(ngx_fd_t *fd, ngx_log_t *log)
+void ngx_close_channel(ngx_fd_t *fd, ngx_log_t *log)
 {
     if (close(fd[0]) == -1) {
         ngx_log_error(NGX_LOG_ALERT, log, ngx_errno, "close() channel failed");

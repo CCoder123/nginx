@@ -1,26 +1,20 @@
-
 /*
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
  */
 
-
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_event.h>
 
-
 extern int  ngx_kqueue;
 
-
-ssize_t
-ngx_aio_read(ngx_connection_t *c, u_char *buf, size_t size)
+ssize_t ngx_aio_read(ngx_connection_t *c, u_char *buf, size_t size)
 {
     int           n;
     ngx_event_t  *rev;
 
     rev = c->read;
-
     if (!rev->ready) {
         ngx_log_error(NGX_LOG_ALERT, c->log, 0, "second aio post");
         return NGX_AGAIN;

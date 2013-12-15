@@ -1,13 +1,10 @@
-
 /*
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
  */
 
-
 #include <ngx_config.h>
 #include <ngx_core.h>
-
 
 ngx_int_t ngx_daemon(ngx_log_t *log)
 {
@@ -26,7 +23,6 @@ ngx_int_t ngx_daemon(ngx_log_t *log)
     }
 
     ngx_pid = ngx_getpid();
-
     if (setsid() == -1) {   //setsid创建一个新会话
         ngx_log_error(NGX_LOG_EMERG, log, ngx_errno, "setsid() failed");
         return NGX_ERROR;

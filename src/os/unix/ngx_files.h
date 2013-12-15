@@ -1,22 +1,17 @@
-
 /*
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
  */
 
-
 #ifndef _NGX_FILES_H_INCLUDED_
 #define _NGX_FILES_H_INCLUDED_
-
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
-
 typedef int                      ngx_fd_t;
 typedef struct stat              ngx_file_info_t;
 typedef ino_t                    ngx_file_uniq_t;
-
 
 typedef struct {
     u_char                      *name;

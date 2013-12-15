@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
@@ -15,8 +14,7 @@ static ngx_int_t ngx_disable_accept_events(ngx_cycle_t *cycle);
 static void ngx_close_accepted_connection(ngx_connection_t *c);
 
 //这个函数被调用是当listen 句柄有可读事件之后才被调用
-void
-ngx_event_accept(ngx_event_t *ev)
+void ngx_event_accept(ngx_event_t *ev)
 {
     socklen_t          socklen;
     ngx_err_t          err;
@@ -27,12 +25,12 @@ ngx_event_accept(ngx_event_t *ev)
     ngx_connection_t  *c, *lc;
     ngx_event_conf_t  *ecf;
     u_char             sa[NGX_SOCKADDRLEN];
+
 #if (NGX_HAVE_ACCEPT4)
     static ngx_uint_t  use_accept4 = 1;
 #endif
 
     ecf = ngx_event_get_conf(ngx_cycle->conf_ctx, ngx_event_core_module);
-
     if (ngx_event_flags & NGX_USE_RTSIG_EVENT) {
         ev->available = 1;
 
@@ -63,7 +61,6 @@ ngx_event_accept(ngx_event_t *ev)
 
         if (s == -1) {  //连接的错误处理
             err = ngx_socket_errno;
-
             if (err == NGX_EAGAIN) {
                 ngx_log_debug0(NGX_LOG_DEBUG_EVENT, ev->log, err,
                                "accept() not ready");
@@ -109,7 +106,6 @@ ngx_event_accept(ngx_event_t *ev)
 
         //从连接池取得连接，然后创建连接里面包含的数据结构
         c = ngx_get_connection(s, ev->log);
-
         if (c == NULL) {
             if (ngx_close_socket(s) == -1) {
                 ngx_log_error(NGX_LOG_ALERT, ev->log, ngx_socket_errno,
@@ -136,7 +132,6 @@ ngx_event_accept(ngx_event_t *ev)
             ngx_close_accepted_connection(c);
             return;
         }
-
         ngx_memcpy(c->sockaddr, sa, socklen);
 
         //分配log
@@ -147,7 +142,6 @@ ngx_event_accept(ngx_event_t *ev)
         }
 
         /* set a blocking mode for aio and non-blocking mode for others */
-
         if (ngx_inherited_nonblocking) {
             if (ngx_event_flags & NGX_USE_AIO_EVENT) {
                 if (ngx_blocking(s) == -1) {
@@ -168,7 +162,6 @@ ngx_event_accept(ngx_event_t *ev)
                 }
             }
         }
-
         *log = ls->log;
 
         //设置读取的回调，这里依赖于操作系统
@@ -201,9 +194,9 @@ ngx_event_accept(ngx_event_t *ev)
         //准备设置读写的结构
         rev = c->read;
         wev = c->write;
-
         wev->ready = 1;
-        //这里使用的epoll模型，在这里设置连接为nonblocking
+        
+		//这里使用的epoll模型，在这里设置连接为nonblocking
         if (ngx_event_flags & (NGX_USE_AIO_EVENT|NGX_USE_RTSIG_EVENT)) {
             /* rtsig, aio, iocp */
             rev->ready = 1;
